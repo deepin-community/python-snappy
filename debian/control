@@ -1,0 +1,24 @@
+Source: python-snappy
+Section: python
+Priority: optional
+Maintainer: Shell Xu <shell909090@gmail.com>
+Build-Depends: debhelper (>= 9),
+               dh-python,
+               libsnappy-dev,
+               python3-all-dev,
+               python3-setuptools,
+Standards-Version: 4.1.5
+Homepage: http://github.com/andrix/python-snappy
+
+Package: python3-snappy
+Architecture: any
+Depends: ${misc:Depends},
+         ${python3:Depends},
+         ${shlibs:Depends},
+Description: snappy compression library from Google - Python 3.x
+ Snappy is a compression/decompression library. It does not aim for
+ maximum compression, or compatibility with any other compression
+ library; instead, it aims for very high speeds and reasonable
+ compression. You can read package libsnappy1 for more information.
+ .
+ This package provides the Python 3.x module.

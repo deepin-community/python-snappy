@@ -1,0 +1,43 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+PYTHON3S:=$(shell py3versions -vr)
+
+DEBVERS         ?= $(shell dpkg-parsechangelog -SVersion)
+VERSION         ?= $(shell echo '$(DEBVERS)' | sed -e 's/^[[:digit:]]*://' -e 's/[-].*//')
+DEBFLAVOR       ?= $(shell dpkg-parsechangelog -SDistribution)
+DEBPKGNAME      ?= $(shell dpkg-parsechangelog -SSource)
+UPSTREAM_GIT    ?= https://github.com/andrix/python-snappy
+GIT_TAG         ?= $(shell echo '$(VERSION)' | sed -e 's/~/_/')
+MANIFEST_EXCLUDE_STANDARD ?= $(DEBPKGNAME)
+DEBIAN_BRANCH   ?= $(shell cat debian/gbp.conf | grep debian-branch | cut -d'=' -f2 | awk '{print $1}')
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+bindnow
+
+%:
+	dh $@ --buildsystem=pybuild --with python3
+
+override_dh_auto_clean:
+	dh_auto_clean
+	rm -rf build
+	rm -rf python_snappy.egg-info
+
+override_dh_auto_install:
+	set -e ; for pyvers in $(PYTHON3S); do \
+		python$$pyvers setup.py install --install-layout=deb \
+			--root $(CURDIR)/debian/python3-snappy; \
+	done
+	rm -f $(CURDIR)/debian/python*/usr/lib/python*/dist-packages/*.pth
+
+gen-orig-xz:
+	git tag -v $(GIT_TAG) || true
+	if [ ! -f ../$(DEBPKGNAME)_$(VERSION).orig.tar.xz ] ; then \
+		git archive --prefix=$(DEBPKGNAME)-$(VERSION)/ $(GIT_TAG) | xz >../$(DEBPKGNAME)_$(VERSION).orig.tar.xz ; \
+	fi
+	[ ! -e ../build-area ] && mkdir ../build-area || true
+	[ ! -e ../build-area/$(DEBPKGNAME)_$(VERSION).orig.tar.xz ] && cp ../$(DEBPKGNAME)_$(VERSION).orig.tar.xz ../build-area
+
+fetch-upstream-remote:
+	git remote add upstream $(UPSTREAM_GIT) || true
+	git remote set-url upstream $(UPSTREAM_GIT)
+	git fetch upstream
